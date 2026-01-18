@@ -1,8 +1,13 @@
 import React from 'react'
 import { HiOutlineUser ,HiOutlineShoppingBag,HiBars3BottomRight} from 'react-icons/hi2'
 import SearchBar from './SearchBar'
+import CartDrawer from '../layout/CartDrawer'
 
 const NavBar = () => {
+    const [drawerOpen, setDrawerOpen] = React.useState(false)
+      const toggleCartDrawer = () => {
+        setDrawerOpen(!drawerOpen)
+      }
   return (
     <>
       <nav className="bg-white shadow-md">
@@ -14,9 +19,9 @@ const NavBar = () => {
               <a href="#" className="text-gray-700 hover:text-blue-500">Services</a>
               <a href="#" className="text-gray-700 hover:text-blue-500">Contact</a>
             </div>
-            <div className="flex items-centerspace-x-6">
+            <div className="flex items-center space-x-6">
               <a href="/profile" className="text-gray-700 hover:text-blue-500"> <HiOutlineUser className='h-14 w-6 text-gray-700'/> </a>
-              <button className='relative hover:text-black'>
+              <button onClick={toggleCartDrawer} className='relative hover:text-black'>
                 <HiOutlineShoppingBag className='h-6 w-6 text-gray-700'/>
                 <span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5'>3</span>
               </button>
@@ -29,6 +34,7 @@ const NavBar = () => {
             </button>
         </div>
       </nav>
+      <CartDrawer drawerOpen={drawerOpen} toggleCartDrawer={toggleCartDrawer} />
     </> 
   )
 }

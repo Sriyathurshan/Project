@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { HiMagnifyingGlass, HiMiniXCircle, HiMiniXMark } from 'react-icons/hi2'
+import { HiMagnifyingGlass, HiMiniXCircle } from 'react-icons/hi2'
 
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState("")
