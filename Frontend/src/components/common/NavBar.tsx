@@ -2,12 +2,17 @@ import React from 'react'
 import { HiOutlineUser ,HiOutlineShoppingBag,HiBars3BottomRight} from 'react-icons/hi2'
 import SearchBar from './SearchBar'
 import CartDrawer from '../layout/CartDrawer'
+import { IoMdCloseCircle } from 'react-icons/io'
 
 const NavBar = () => {
     const [drawerOpen, setDrawerOpen] = React.useState(false)
+    const [navdrawerOpen, setNavDrawerOpen] = React.useState(false) 
       const toggleCartDrawer = () => {
         setDrawerOpen(!drawerOpen)
       }
+      const toggleNavDrawer = () => {
+        setNavDrawerOpen(!navdrawerOpen)
+      } 
   return (
     <>
       <nav className="bg-white shadow-md">
@@ -27,7 +32,7 @@ const NavBar = () => {
               </button>
               <SearchBar/>
             </div>
-            <button className="md:hidden text-gray-700"> 
+            <button onClick={toggleNavDrawer} className="md:hidden text-gray-700"> 
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12H12m-8.25 5.25h16.5" />
               </svg>
@@ -35,7 +40,23 @@ const NavBar = () => {
         </div>
       </nav>
       <CartDrawer drawerOpen={drawerOpen} toggleCartDrawer={toggleCartDrawer} />
-    </> 
+      <div className={`fixed top-0 left-0 w-3/4 sm:w-1/2 h-full bg-white shadow-lg transform transition-transform duration-300 z-50 ${ navdrawerOpen ? 'translate-x-0' : '-translate-x-full' }`}>
+        <div className='flex justify-end p-4'>
+            <button onClick={toggleNavDrawer}>
+                <IoMdCloseCircle className='h-6 w-6 text-gray-600'/>
+            </button>
+        </div>
+        <div className="p-4">
+          <h2 className="text-xl font-bold mb-4">Navigation Menu</h2>
+          <ul>
+            <li><a href="#" className="block py-2 text-gray-700 hover:text-blue-500">Home</a></li>
+            <li><a href="#" className="block py-2 text-gray-700 hover:text-blue-500">Products</a></li>
+            <li><a href="#" className="block py-2 text-gray-700 hover:text-blue-500">Services</a></li>
+            <li><a href="#" className="block py-2 text-gray-700 hover:text-blue-500">Contact</a></li>
+          </ul>
+        </div>
+        </div>
+    </>
   )
 }
 
