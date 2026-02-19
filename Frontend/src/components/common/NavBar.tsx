@@ -3,6 +3,7 @@ import { HiOutlineUser ,HiOutlineShoppingBag,HiBars3BottomRight} from 'react-ico
 import SearchBar from './SearchBar'
 import CartDrawer from '../layout/CartDrawer'
 import { IoMdCloseCircle } from 'react-icons/io'
+import { Link } from 'react-router-dom'
 
 const NavBar = () => {
     const [drawerOpen, setDrawerOpen] = React.useState(false)
@@ -19,10 +20,10 @@ const NavBar = () => {
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
             <div > <a href="/" className="text-2xl font-bold text-gray-800"> Logo </a> </div>
             <div className="hidden md:flex space-x-6">
-              <a href="#" className="text-gray-700 hover:text-blue-500">Home</a>
-              <a href="#" className="text-gray-700 hover:text-blue-500">Products</a>
-              <a href="#" className="text-gray-700 hover:text-blue-500">Services</a>
-              <a href="#" className="text-gray-700 hover:text-blue-500">Contact</a>
+              <Link to="/collection" className="text-gray-700 hover:text-blue-500">Men</Link>
+              <Link to="/collection" className="text-gray-700 hover:text-blue-500">Women</Link>
+              <Link to="/collection" className="text-gray-700 hover:text-blue-500">Services</Link>
+              <Link to="/collection" className="text-gray-700 hover:text-blue-500">Contact</Link>
             </div>
             <div className="flex items-center space-x-6">
               <a href="/profile" className="text-gray-700 hover:text-blue-500"> <HiOutlineUser className='h-14 w-6 text-gray-700'/> </a>
