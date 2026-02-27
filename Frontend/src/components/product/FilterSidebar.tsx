@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const FilterSidebar = () => {
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
     const [filters, setFilters] = React.useState({
         category: searchParams.get('category') || '',
         gender: searchParams.get('gender') || '',
@@ -16,6 +17,14 @@ const FilterSidebar = () => {
 
     const [priceRange,setPriceRange]= React.useState([Number(filters.minPrice), Number(filters.maxPrice)]);
 
+    const handlePriceChange = (e) => {
+        const newPrice = e.target.value
+        setPriceRange([0,newPrice])
+        const newFilters = {...filters, minPrice: 0, maxPrice: newPrice}
+        setFilters(filters)
+        updateURLParams(newFilters)
+    }
+    
     const category = ['Clothing', 'Footwear', 'Accessories'];
     const colors = ['Red', 'Blue', 'Green', 'Black', 'White'];
     const sizes = ['XS', 'S', 'M', 'L', 'XL'];
@@ -42,7 +51,37 @@ const FilterSidebar = () => {
 
     const handleFilterChange = (e) => {
         const {name,value,checked,type} = e.target  
-        console.log({name,value,checked,type}) }
+        let newFilters = {...filters }
+
+        if (type == "checkbox"){
+            if(checked){
+                newFilters[name] = [...newFilters[name] || [] , value]
+            }else{
+                newFilters[name] = newFilters[name].filter((item) => item !== value)
+            } }
+        else{
+            newFilters[name] = value
+            }  
+        setFilters(newFilters)
+        console.log(newFilters) 
+        updateURLParams(newFilters)
+        
+    }
+
+    const updateURLParams = (newFilters) => {
+        const params = new URLSearchParams();
+        Object.keys(newFilters).forEach((key) => {
+            const value = newFilters[key];
+            if (Array.isArray(value) && value.length > 0) {
+                params.set(key, value.join(','));
+            } else if (value) {
+                params.append(key, value);
+                            }
+            });
+        setSearchParams(params);
+        navigate(`?${params.toString()}`);
+    }
+        
 
 
         
@@ -60,6 +99,7 @@ const FilterSidebar = () => {
                         name='category'
                         value={category}
                         onChange={handleFilterChange}
+                        checked={filters.category === category}
                         className='mr-2 h-4 w-4  accent-blue-900 focus:ring-blue-800 border-white'/>
                     <span className='text-gray-700'>{category}</span>
                 </div>
@@ -77,6 +117,7 @@ const FilterSidebar = () => {
                         name='gender'
                         value={gender}
                         onChange={handleFilterChange}
+                        checked={filters.gender === gender}
                         className='mr-2 h-4 w-4  accent-blue-900 focus:ring-blue-800 border-gray-300'/>
                     <span className='text-gray-700'>{gender}</span>
                 </div>
@@ -91,8 +132,8 @@ const FilterSidebar = () => {
                 {colors.map((color) => (
                     <button key={color}
                         value={color}
-                        onChange={handleFilterChange}
-                        className="!w-8 !h-8 !p-0 !rounded-full border border-gray-300 cursor-pointer transition hover:scale-105"
+                        onClick={handleFilterChange}
+                        className={`!w-8 !h-8 !p-0 !rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${filters.color === color ? 'ring-2 ring-blue-500' : ''}`}
                         style={{backgroundColor: color.toLowerCase()}}>
                     </button>
                 ))}
@@ -109,6 +150,7 @@ const FilterSidebar = () => {
                         name='size'
                         value={size}
                         onChange={handleFilterChange}
+                        checked={filters.size.includes(size)}
                         className='mr-2 h-4 w-4  accent-blue-900 focus:ring-blue-800 border-gray-300'/>
                     <span className='text-gray-700'>{size}</span>
                 </div>
@@ -126,6 +168,7 @@ const FilterSidebar = () => {
                         name='brand'
                         value={Brand}
                         onChange={handleFilterChange}
+                        checked={filters.brand.includes(Brand)}
                         className='mr-2 h-4 w-4  accent-blue-900 focus:ring-blue-800 border-gray-300'/>
                     <span className='text-gray-700'>{Brand}</span>
                 </div>
@@ -143,6 +186,7 @@ const FilterSidebar = () => {
                         name='material'
                         value={material}
                         onChange={handleFilterChange}
+                        checked={filters.material.includes(material)}
                         className='mr-2 h-4 w-4  accent-blue-900 focus:ring-blue-800 border-gray-300'/>
                     <span className='text-gray-700'>{material}</span>
                 </div>
@@ -158,6 +202,8 @@ const FilterSidebar = () => {
                 name='priceRange'
                 min={0}
                 max={100}
+                value={priceRange[1]}
+                onChange={handlePriceChange}
                 className='w-full h-2 bg-gray-300 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500'/>
                 
             </div>

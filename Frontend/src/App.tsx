@@ -7,6 +7,9 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Profile from './pages/Profile'
 import Collection from './pages/Collection'
+import ProductDetails from './components/product/ProductDetails'
+import Checkout from './components/cart/Checkout'
+import OrderConfirmationPage from './pages/OrderConfirmationPage'
 
 const App = () => {
   return (
@@ -19,6 +22,9 @@ const App = () => {
           <Route path= "Register" element ={<Register />} />
           <Route path="Profile" element={<Profile/>}/>
           <Route path="collection" element={<Collection/>}/>
+          <Route path="product/:id" element={<ProductDetails/>}/>
+          <Route path="checkout" element={<Checkout/>}/>
+          <Route path="order-confirmation" element={<OrderConfirmationPage/>}/>
         </Route>
         <Route>
         {/*admin layout*/}
