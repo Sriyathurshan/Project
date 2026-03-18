@@ -1,4 +1,3 @@
-import React from 'react'
 import MyOrdersPage from './MyOrdersPage'
 
 const Profile = () => {

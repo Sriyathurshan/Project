@@ -1,4 +1,3 @@
-import React from 'react'
 import { RiDeleteBin3Line } from 'react-icons/ri'
 
 const CartContents = () => {

@@ -1,4 +1,3 @@
-import React from 'react'
 import { HiArrowPathRoundedSquare, HiOutlineCreditCard, HiShoppingBag } from 'react-icons/hi2'
 
 const FeaturesSection = () => {

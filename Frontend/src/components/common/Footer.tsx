@@ -1,4 +1,3 @@
-import React from 'react'
 import { FiPhoneCall } from 'react-icons/fi'
 import { IoLogoInstagram } from 'react-icons/io'
 import { RiTwitterXLine } from 'react-icons/ri'

@@ -26,6 +26,7 @@ const NavBar = () => {
               <Link to="/collection" className="text-gray-700 hover:text-blue-500">Contact</Link>
             </div>
             <div className="flex items-center space-x-6">
+              <Link to="/admin" className="block bg-black px-2 rounded text-sm text-white font-medium uppercasse">Admin </Link>
               <a href="/profile" className="text-gray-700 hover:text-blue-500"> <HiOutlineUser className='h-14 w-6 text-gray-700'/> </a>
               <button onClick={toggleCartDrawer} className='relative hover:text-black'>
                 <HiOutlineShoppingBag className='h-6 w-6 text-gray-700'/>

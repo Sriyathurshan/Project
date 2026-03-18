@@ -1,4 +1,3 @@
-import React from 'react'
 import womenCollectionImage from '../../assets/womens-collection.webp'
 import menCollectionImage from '../../assets/mens-collection.webp'
 
