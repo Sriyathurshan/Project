@@ -134,10 +134,103 @@ router.put("/:id",protect,admin,async(req,res) =>{
 //@desc Delete a product by ID
 //@access private/admin
 
-// router.delete("/:id",protect,admin,async(req,res) =>{
-//     try{
-//         //find the product by id
-//     }catch(error){}
-// })
+router.delete("/:id",protect,admin,async(req,res) =>{
+    try{
+        //find the product by id
+        const product = await Product.findById(req.params.id)
+
+        if(product){
+            await product.deleteOne()
+            res.json({message:"Product removed"})
+        }else{
+            res.status(404).json({message :"product not found"})
+        }
+    }catch(error){
+        console.error(error)
+        res.status(500).send("Server Error")
+    }
+})
+
+//@route GET /api/products
+//@desc Get all products with optional query filters
+// @access Public
+router.get("/",async(req,res)=>{
+    try{
+        const {collection,size,color,gender,minPrice,maxPrice,sortBy,
+            search,category,material,brand,limit
+        }=req.query
+
+        let query ={}
+
+        //Filter Function
+        if (collection && collection.toLocaleLowerCase() !== "all"){
+            query.collections=collection
+        }
+
+        if (category && category.toLocaleLowerCase() !== "all"){
+            query.category=category
+        }
+
+        if (material){
+            query.material={$in :material.split(",")}
+        }
+
+        if(brand){
+            query.brand={$in :brand.split(",")}
+        }
+
+        if(size){
+            query.sizes={$in :size.split(",")}
+        }
+
+        if(color){
+            query.colors={$in :color.split(",")}
+        }
+
+        if(gender){
+            query.gender=gender
+        }
+
+        if(minPrice||maxPrice){
+            query.price={}
+            if(minPrice) query.price.$gte = Number(minPrice)
+            if(maxPrice) query.price.$lte=Number(maxPrice)
+        }
+
+        if(search){
+            query.$or =[
+                {name:{$regex :search,$options:"i"}},
+                {description:{$regex :search,$options:"i"}}
+            ]
+        }
+
+        let sort={}
+
+        if(sortBy){
+            switch (sortBy){
+                case "priceAsc":
+                    sort={price:1}
+                    break
+                case "priceDesc":
+                    sort={price:-1}
+                    break
+                case "popularity":
+                    sort={rating:-1}
+                    break
+                default:
+                    break
+            }
+        }
+
+        //Fetch the product form database
+        let products =await Product.find(query).sort(sort).limit(Number(limit) || 0)
+        res.json(products)
+    
+    }
+     catch(error){
+        console.error(error) 
+        res.status(500).json("server error")
+    }
+})
 
 module.exports = router;
