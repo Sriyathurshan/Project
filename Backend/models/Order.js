@@ -22,7 +22,7 @@ const orderItemSchema = new mongoose.Schema({
     color:String,
     quantity:{
         type:Number,
-        // required:true
+        required:true
     }
 },
 {_id:false})
