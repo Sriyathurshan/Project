@@ -1,16 +1,18 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
 import login from "../assets/login.webp"
+import {loginUser} from "../redux/slice/authSlice"
+import { useDispatch } from 'react-redux';
 
 const Login = () => {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [error, setError] = React.useState('');
+    const dispatch = useDispatch()
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("user logged :",{email,password})
-        // Handle login logic here
+        dispatch(loginUser({email,password}))
     }; 
   return (
     <div className="flex">

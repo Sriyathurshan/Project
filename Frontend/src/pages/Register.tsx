@@ -1,17 +1,19 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
 import login from "../assets/login.webp"
+import { registerUser }  from "../redux/slice/authSlice"
+import {useDispatch} from "react-redux"
 
 const Register = () => {
-    const [username,setUsername]=React.useState('');
+    const [name,setName]=React.useState('');
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [error, setError] = React.useState('');
+    const dispatch = useDispatch()
 
     const handleRegister= (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("user registered:",{username,email,password})
-        // Handle login logic here
+       dispatch(registerUser({name,email,password}))
     }; 
   return (
     <div className="flex">
@@ -25,8 +27,8 @@ const Register = () => {
                     <input 
                         type="text" 
                         id="username" 
-                        value={username} 
-                        onChange={(e) => setUsername(e.target.value)} 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
                         className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
                         required
                         placeholder="enter your user name"
