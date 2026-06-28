@@ -1,48 +1,29 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import PayPalButton from './PayPalButton';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { createCheckout } from '../../redux/slice/checkoutSlice';
+import axios from 'axios';
 
-const cart={
-    products:[
-        {
-            name:"product 1",
-            price: 100,
-            color: "red",
-            size: "M",
-            quantity: 1,
-            image: "https://picsum.photos/500/500?random=12"
-        },
-        {
-            name:"product 2",
-            price: 24,
-            color: "blue",
-            size: "L",
-            quantity: 1,
-            image: "https://picsum.photos/500/500?random=13"
-        },
-        {
-            name:"product 3",
-            price: 243,
-            color: "green",
-            size: "S",
-            quantity: 1,
-            image: "https://picsum.photos/500/500?random=14"
-        },
-        {
-            name:"product 4",
-            price: 50,
-            color: "yellow",
-            size: "XL",
-            quantity: 1,
-            image: "https://picsum.photos/500/500?random=15"
-        }
-    ],
-    totalPrice: 417
+interface CheckoutProduct {
+    image?: string;
+    name?: string;
+    color?: string;
+    size?: string;
+    quantity?: number;
+    price?: number;
+}
+
+interface CheckoutResponse {
+    _id: string;
 }
 
 const Checkout = () => {
+    const dispatch = useAppDispatch()
+    const {cart, loading, error} =useAppSelector((state)=>state.cart)
+    const {user} = useAppSelector((state) => state.auth) 
     const navigate = useNavigate();
-    const [checkoutId, setCheckoutId] = React.useState(null);
+    const [checkoutId, setCheckoutId] = React.useState<string | null>(null);
     const[shippingAddress, setShippingAddress] = React.useState({
         email: "",
         firstName: "",
@@ -54,12 +35,76 @@ const Checkout = () => {
         country: ""
     });
 
-    const handlePayPalSuccess = (details: any) => {
-        // Handle successful payment here
-        console.log("Payment Successful!", details);
-        // You can navigate to a success page or show a success message
-        navigate('/order-confirmation');
+    //Ensure cart is loaded before processing
+    useEffect(()=>{
+        if(!cart || !cart.products||cart.products.length===0){
+            navigate("/")
+        }
+    },[cart,navigate])
+
+    const cartProducts = cart.products as CheckoutProduct[];
+    const totalPrice = Number(cart.totalPrice ?? 0);
+
+    const handleCreateCheckout = async(e: React.FormEvent) =>{
+        e.preventDefault()
+        if (cart && cart.products.length>0){
+            const res = await dispatch(createCheckout({
+                checkoutItems:cart.products,
+                shippingAddress,
+                paymentMethod:"Paypal",
+                totalPrice
+            })).unwrap() as CheckoutResponse
+            if (res._id){
+                setCheckoutId(res._id)
+            }
+        }
     }
+
+    const handlePayPalSuccess =async (details: any) => {
+        try{
+            const response= await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/pay`,
+                {paymentStatus:"paid",paymentDetails:details},
+                {
+                    headers:{
+                        Authorization :`Bearer ${localStorage.getItem("userToken")}`
+                    } 
+                }
+            )
+            
+                await handleFinalizeCheckout(checkoutId)
+            
+            
+        }
+        catch(error){
+            console.error(error)
+        }
+    }
+
+    const handleFinalizeCheckout = async(checkoutId: string | null)=>{
+        if (!checkoutId) return
+        try{
+            const response=await axios.post(
+                `${
+                import.meta.env.VITE_BACKEND_URL
+                }/api/checkout/${checkoutId}/finalize`,{},
+                {
+                    headers :{
+                        Authorization:`Bearer ${localStorage.getItem("userToken")}`
+                    }
+                }
+            )
+            
+                navigate("/order-connfirmation")
+            
+        }
+        catch(error){
+            console.error(error)
+        }
+    }
+
+    if(loading) return <p>Loading Cart...</p>
+    if (error) return<p>Error: {error}</p>
+    if(!cart||!cart.products||cart.products.length===0) return <p> Your Cart is Empty</p>
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -69,27 +114,19 @@ const Checkout = () => {
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Here you can handle the form submission, e.g., send the data to your backend or proceed to payment.
-        console.log("Shipping Address:", shippingAddress);
-        console.log("Cart:", cart);
-        setCheckoutId("dummy-checkout-id"); // Set a dummy checkout ID for demonstration
-        // Navigate to a confirmation page or payment gateway if needed
-    }
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto py-10 px-6 text-left tracking-tighter">
         {/* left section */}
         <div className='bg-white rounded-lg p-6'>
             <h2 className='text-2xl font-semibold uppercase mb-6'>Check Out</h2>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleCreateCheckout}>
                 <h3 className='text-lg font-semibold mb-4'>Contact Details</h3>
                 <div className='mb-6'>
                     <label className='block'> Email </label>
                         <input
                             type="email"
                             name="email"
-                            value="sriii@sgm.com"
+                            value={user? user.email:""}
                             // value={shippingAddress.email}
                             onChange={handleInputChange}
                             disabled
@@ -179,7 +216,6 @@ const Checkout = () => {
                     {!checkoutId ? (
                         <button 
                             type="submit" 
-                            onClick={handleSubmit}
                             className='w-full bg-black text-white px-4 py-2 rounded hover:bg-gray-700 transition duration-300'
                         >
                     Proceed to Payment
@@ -188,7 +224,7 @@ const Checkout = () => {
                     <div >
                         <h3 className='text-lg mb-4'>Pay with Paypal</h3>
                         <PayPalButton 
-                        amount={100} 
+                        amount={totalPrice} 
                         onSuccess={handlePayPalSuccess} 
                         onError={(err) => alert("Payment Error: " + err.message)}
                         />
@@ -201,7 +237,7 @@ const Checkout = () => {
         <div className='bg-white rounded-lg p-6'>
             <h2 className='text-2xl font-semibold uppercase mb-6'>Order Summary</h2>
             <div className='space-y-4'>
-                {cart.products.map((product, index) => (
+                {cartProducts.map((product, index) => (
                     <div key={index} className='flex items-start justify-between py-2 space-x-4'>
                         <div className='flex-items-center'>
                             <img src={product.image} alt={product.name} className='w-20 h-24 object-cover mr-4 rounded' />
@@ -219,7 +255,7 @@ const Checkout = () => {
             <hr className='my-4' />
             <div className='flex justify-between font-semibold'>
                 <span>Subtotal:</span>
-                <span>${cart.totalPrice}</span>
+                <span>${totalPrice}</span>
             </div>
             <div className='flex justify-between font-semibold'>
                 <span>Shipping:</span>
@@ -227,7 +263,7 @@ const Checkout = () => {
             </div>
             <div className='flex justify-between font-semibold'>
                 <span>Total:</span>
-                <span>${cart.totalPrice + 10}</span>
+                <span>${totalPrice + 10}</span>
             </div>
 
         </div>

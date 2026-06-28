@@ -1,27 +1,38 @@
 import React, { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+interface Filters {
+    category: string;
+    gender: string;
+    color: string;
+    size: string[];
+    material: string[];
+    minPrice: string | number;
+    maxPrice: string | number;
+    brand: string[];
+}
+
 const FilterSidebar = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [filters, setFilters] = React.useState({
+    const [filters, setFilters] = React.useState<Filters>({
         category: searchParams.get('category') || '',
         gender: searchParams.get('gender') || '',
         color: searchParams.get('color') || '',
-        size: searchParams.get('size') || [],
-        material: searchParams.get('material') || [],
+        size: searchParams.get('size')?.split(',') || [],
+        material: searchParams.get('material')?.split(',') || [],
         minPrice: searchParams.get('minPrice') || 0,
         maxPrice: searchParams.get('maxPrice') || 100,
-        brand: searchParams.get('brand') || '',
+        brand: searchParams.get('brand')?.split(',') || [],
     });
 
     const [priceRange,setPriceRange]= React.useState([Number(filters.minPrice), Number(filters.maxPrice)]);
 
-    const handlePriceChange = (e) => {
-        const newPrice = e.target.value
+    const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newPrice = Number(e.target.value)
         setPriceRange([0,newPrice])
         const newFilters = {...filters, minPrice: 0, maxPrice: newPrice}
-        setFilters(filters)
+        setFilters(newFilters)
         updateURLParams(newFilters)
     }
     
@@ -49,18 +60,23 @@ const FilterSidebar = () => {
 
     }, [searchParams]);
 
-    const handleFilterChange = (e) => {
-        const {name,value,checked,type} = e.target  
+    const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement> | React.MouseEvent<HTMLButtonElement>) => {
+        const target = e.target as HTMLInputElement | HTMLButtonElement
+        const {name,value} = target
+        const checked = target instanceof HTMLInputElement ? target.checked : false
+        const type = target instanceof HTMLInputElement ? target.type : "button"
         let newFilters = {...filters }
 
         if (type == "checkbox"){
+            const key = name as "size" | "material" | "brand"
             if(checked){
-                newFilters[name] = [...newFilters[name] || [] , value]
+                newFilters[key] = [...newFilters[key] || [] , value]
             }else{
-                newFilters[name] = newFilters[name].filter((item) => item !== value)
+                newFilters[key] = newFilters[key].filter((item) => item !== value)
             } }
         else{
-            newFilters[name] = value
+            const key = name as "category" | "gender" | "color"
+            newFilters[key] = value
             }  
         setFilters(newFilters)
         console.log(newFilters) 
@@ -68,14 +84,15 @@ const FilterSidebar = () => {
         
     }
 
-    const updateURLParams = (newFilters) => {
+    const updateURLParams = (newFilters: Filters) => {
         const params = new URLSearchParams();
         Object.keys(newFilters).forEach((key) => {
-            const value = newFilters[key];
+            const filterKey = key as keyof Filters
+            const value = newFilters[filterKey];
             if (Array.isArray(value) && value.length > 0) {
                 params.set(key, value.join(','));
             } else if (value) {
-                params.append(key, value);
+                params.append(key, String(value));
                             }
             });
         setSearchParams(params);
@@ -131,6 +148,7 @@ const FilterSidebar = () => {
             <div className='flex flex-wrap gap-2'>
                 {colors.map((color) => (
                     <button key={color}
+                        name='color'
                         value={color}
                         onClick={handleFilterChange}
                         className={`!w-8 !h-8 !p-0 !rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${filters.color === color ? 'ring-2 ring-blue-500' : ''}`}

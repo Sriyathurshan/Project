@@ -1,20 +1,33 @@
 import React, { useEffect } from 'react'
 import { FaFilter } from 'react-icons/fa'
-import FilterSidebar from '../components/product/FilterSIDEBAR'
+import FilterSidebar from '../components/product/FilterSidebar'
 import SortOptions from '../components/product/SortOptions'
 import ProductGrid from '../components/product/ProductGrid'
+import type { Product } from '../redux/types'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchProductsByFilters } from '../redux/slice/productsSlice'
+import type { RootState, AppDispatch } from "../redux/store";
 
 const Collection = () => {
-    const [products, setProducts] = React.useState([])
-    const sideBarRef = React.useRef(null)
+    const {collection} =useParams()
+    const [searchParams] =useSearchParams()
+    const dispatch = useDispatch<AppDispatch>()
+    const { products, loading, error } = useSelector((state: RootState) => state.products)
+    const sideBarRef = React.useRef<HTMLDivElement | null>(null)
     const [isSideBarOpen, setIsSideBarOpen] = React.useState(false)
+    const queryParams = Object.fromEntries([...searchParams])
 
     const toggleSideBar = () => {
         setIsSideBarOpen(!isSideBarOpen)
     }
 
-    const handleClickOutside = (e ) => {
-        if (sideBarRef.current && !sideBarRef.current.contains(e.target)) {
+    useEffect(()=>{
+        dispatch(fetchProductsByFilters({collection,...queryParams}))
+    },[dispatch,collection,searchParams])
+
+    const handleClickOutside = (e: MouseEvent) => {
+        if (sideBarRef.current && e.target instanceof Node && !sideBarRef.current.contains(e.target)) {
             setIsSideBarOpen(false)
         }
     }
@@ -28,61 +41,6 @@ const Collection = () => {
 }, [])
     
 
-    useEffect(() => {
-        setTimeout (() => {
-            const fetchedProducts = [
-                {
-                    _id: 1,
-                    name: "product 1",
-                    images: [{url:"https://picsum.photos/500/500?random=12"}],
-                    price : 100
-                },
-                {
-                    _id: 2,
-                    name: "product 2",
-                    images: [{url:"https://picsum.photos/500/500?random=13"}],
-                    price: 24
-                },
-                {
-                    _id: 3,
-                    name: "product 3",
-                    images: [{url:"https://picsum.photos/500/500?random=14"}],
-                    price : 243
-                },
-                {
-                    _id: 4,
-                    name: "product 4",
-                    images: [{url:"https://picsum.photos/500/500?random=15"}],
-                    price: 50
-                },
-                {
-                    _id: 1,
-                    name: "product 1",
-                    images: [{url:"https://picsum.photos/500/500?random=12"}],
-                    price : 100
-                },
-                {
-                    _id: 2,
-                    name: "product 2",
-                    images: [{url:"https://picsum.photos/500/500?random=13"}],
-                    price: 24
-                },
-                {
-                    _id: 3,
-                    name: "product 3",
-                    images: [{url:"https://picsum.photos/500/500?random=14"}],
-                    price : 243
-                },
-                {
-                    _id: 4,
-                    name: "product 4",
-                    images: [{url:"https://picsum.photos/500/500?random=15"}],
-                    price: 50
-                }
-            ]
-            setProducts(fetchedProducts)
-        },1000)
-    },[])
 
 
   return (
@@ -112,7 +70,7 @@ const Collection = () => {
                     </div>
                 ))}
             </div> */}
-            <ProductGrid products={products}/>
+            <ProductGrid products={products} loading={loading} error={error}/>
         </div>
     </div>
   )

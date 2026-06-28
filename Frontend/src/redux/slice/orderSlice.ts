@@ -1,8 +1,17 @@
 import { createSlice , createAsyncThunk} from "@reduxjs/toolkit"
 import axios from "axios"
+import type { ApiError, Order } from "../types"
+
+interface OrderState {
+    orders: Order[];
+    totalOrders: number;
+    orderDetails: Order | null;
+    loading: boolean;
+    error: string | null;
+}
 
 //Async thunk to fetch user Orders
-export const fetchUserOrders = createAsyncThunk (
+export const fetchUserOrders = createAsyncThunk<Order[], void, { rejectValue: ApiError }> (
     "orders/fetchUserOrders",
     async (_,{rejectWithValue})=>{
         try{
@@ -17,15 +26,18 @@ export const fetchUserOrders = createAsyncThunk (
             return response.data
         }
         catch(error){
-            return rejectWithValue(error.response.data)
+            if (axios.isAxiosError<ApiError>(error)) {
+                return rejectWithValue(error.response?.data ?? { message: error.message })
+            }
+            return rejectWithValue({ message: "Failed to fetch orders" })
         }
     }
 )
 
 //Async thunk to fetch order details by ID
-export const fetchOrderDetails = createAsyncThunk(
+export const fetchOrderDetails = createAsyncThunk<Order, string | number, { rejectValue: ApiError }>(
     "order/fetchOrderDetails",
-    async (orderId,{rejectWithValue})=>{
+    async (orderId: string | number,{rejectWithValue})=>{
         try{
             const response = await axios.get(
                 `${import.meta.env.VITE_BACKEND_URL}/api/orders/${orderId}`,
@@ -38,19 +50,24 @@ export const fetchOrderDetails = createAsyncThunk(
             return response.data
         }
         catch(error){
-            rejectWithValue(error.response.data)
+            if (axios.isAxiosError<ApiError>(error)) {
+                return rejectWithValue(error.response?.data ?? { message: error.message })
+            }
+            return rejectWithValue({ message: "Failed to fetch order details" })
         }
     })
 
+    const initialState: OrderState = {
+        orders:[],
+        totalOrders:0,
+        orderDetails:null,
+        loading:false,
+        error:null
+    }
+
     const orderSlice = createSlice({
         name:"orders",
-        initialState:{
-            orders:[],
-            totalOrders:0,
-            orderDetails:null,
-            loading:false,
-            error:null
-        },
+        initialState,
         reducers:{},
         extraReducers:(builder) =>{
             builder
@@ -64,7 +81,7 @@ export const fetchOrderDetails = createAsyncThunk(
             })
             .addCase(fetchUserOrders.rejected,(state,action)=>{
                 state.loading=false,
-                state.error = action.payload.message
+                state.error = action.payload?.message ?? action.error.message ?? "Failed to fetch orders"
             })
             .addCase(fetchOrderDetails.pending,(state)=>{
                 state.loading=true,
@@ -76,7 +93,7 @@ export const fetchOrderDetails = createAsyncThunk(
             })
             .addCase(fetchOrderDetails.rejected,(state,action)=>{
                 state.loading=false,
-                state.error = action.payload.message
+                state.error = action.payload?.message ?? action.error.message ?? "Failed to fetch order details"
             })
         }
     })

@@ -4,10 +4,15 @@ import SearchBar from './SearchBar'
 import CartDrawer from '../layout/CartDrawer'
 import { IoMdCloseCircle } from 'react-icons/io'
 import { Link } from 'react-router-dom'
+import { useAppSelector } from '../../redux/hooks'
 
 const NavBar = () => {
     const [drawerOpen, setDrawerOpen] = React.useState(false)
     const [navdrawerOpen, setNavDrawerOpen] = React.useState(false) 
+    const {cart} = useAppSelector((state)=> state.cart)
+    const {user} = useAppSelector((state)=> state.auth)
+    const cartItemCount = cart?.products?.reduce((total,product)=>total+product.quantity,0)|| 0
+
       const toggleCartDrawer = () => {
         setDrawerOpen(!drawerOpen)
       }
@@ -20,17 +25,21 @@ const NavBar = () => {
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
             <div > <a href="/" className="text-2xl font-bold text-gray-800"> Logo </a> </div>
             <div className="hidden md:flex space-x-6">
-              <Link to="/collection" className="text-gray-700 hover:text-blue-500">Men</Link>
-              <Link to="/collection" className="text-gray-700 hover:text-blue-500">Women</Link>
-              <Link to="/collection" className="text-gray-700 hover:text-blue-500">Services</Link>
-              <Link to="/collection" className="text-gray-700 hover:text-blue-500">Contact</Link>
+              <Link to="/collection/?gender=Men" className="text-gray-700 hover:text-blue-500">Men</Link>
+              <Link to="/collection/?gender=Women" className="text-gray-700 hover:text-blue-500">Women</Link>
+              <Link to="/collection/?category=Top Wear" className="text-gray-700 hover:text-blue-500">Top Wear</Link>
+              <Link to="/collection/?category=Bottom Wear" className="text-gray-700 hover:text-blue-500">Bottomm Wear</Link>
             </div>
             <div className="flex items-center space-x-6">
-              <Link to="/admin" className="block bg-black px-2 rounded text-sm text-white font-medium uppercasse">Admin </Link>
+              {user && user.role==="admin" && (
+              <Link to="/admin" className="block bg-black px-2 rounded text-sm text-white font-medium uppercasse">Admin </Link>)}
               <a href="/profile" className="text-gray-700 hover:text-blue-500"> <HiOutlineUser className='h-14 w-6 text-gray-700'/> </a>
               <button onClick={toggleCartDrawer} className='relative hover:text-black'>
                 <HiOutlineShoppingBag className='h-6 w-6 text-gray-700'/>
-                <span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5'>3</span>
+                {cartItemCount >0 && (<span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5'>
+                  {cartItemCount}
+                </span>)}
+                
               </button>
               <SearchBar/>
             </div>
@@ -51,10 +60,10 @@ const NavBar = () => {
         <div className="p-4">
           <h2 className="text-xl font-bold mb-4">Navigation Menu</h2>
           <ul>
-            <li><a href="#" className="block py-2 text-gray-700 hover:text-blue-500">Home</a></li>
-            <li><a href="#" className="block py-2 text-gray-700 hover:text-blue-500">Products</a></li>
-            <li><a href="#" className="block py-2 text-gray-700 hover:text-blue-500">Services</a></li>
-            <li><a href="#" className="block py-2 text-gray-700 hover:text-blue-500">Contact</a></li>
+            <Link to="/collection/?gender=Men" className="block py-2 text-gray-700 hover:text-blue-500">Men</Link>
+            <Link to="/collection/?gender=Women" className="block py-2 text-gray-700 hover:text-blue-500">Women</Link>
+            <Link to="/collection/?category=Top Wear" className="block py-2 text-gray-700 hover:text-blue-500">Top Wear</Link>
+            <Link to="/collection/?category=Bottom Wear" className="block py-2 text-gray-700 hover:text-blue-500">Bottom Wear</Link>
           </ul>
         </div>
         </div>

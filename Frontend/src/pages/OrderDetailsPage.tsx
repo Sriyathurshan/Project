@@ -1,47 +1,22 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { fetchOrderDetails } from '../redux/slice/orderSlice';
 
 const OrderDetailsPage = () => {
     const { id } = useParams ()
-    const [orderDetails, setOrderDetails] = React.useState(null)
 
-    useEffect(() => {
-        // Fetch order details based on the order ID from the URL
-        const mockOrderDetails = {
-            _id: id,
-            createdAt: new Date(),
-            isPaid: true,
-            isDelivered: false,
-            paymentMethod: "PayPal",
-            shippingMethod:"Standard",
-            shippingAddress: {
-                address: "123 Main St",
-                city: "New York",
-                postalCode: "10001",
-                country: "USA"
-            },
-            orderItems: [
-                {
-                    productId: "1",
-                    name: "product 1",
-                    price: 124,
-                    color: "red",
-                    size: "M",
-                    quantity: 1,
-                    image: "https://picsum.photos/500/500?random=12"
-                },
-                {
-                    productId: "2",
-                    name: "product 2",
-                    price: 0,
-                    color: "blue",
-                    size: "L",
-                    quantity: 1,
-                    image: "https://picsum.photos/500/500?random=13"
-                }
-            ]}
-        setOrderDetails(mockOrderDetails)
-    }, [id] )
+    const dispatch = useAppDispatch()
+    const {orderDetails,loading,error} = useAppSelector((state) => state.orders)
+
+    useEffect (()=>{
+        if (id) {
+            dispatch(fetchOrderDetails(id))
+        }
+    },[dispatch,id])
+
+    if(loading) return <p>Loading..</p>
+    if(error ) return <p>Error:{error} </p>
 
   return (
     <div className='max-w-7xl mx-auto p-4 sm:p-6 text-left'>
@@ -106,17 +81,17 @@ const OrderDetailsPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {orderDetails.orderItems.map((item) => (
-                                <tr key={item.productId} className='border-b'>
+                            {orderDetails.orderItems.map((item, index) => (
+                                <tr key={item.productId ?? index} className='border-b'>
                                     <td className='py-2 px-4 flex items-center'>
                                         <img src={item.image} alt={item.name} className='w-12 object-cover rounded-lg mr-4'/>
                                         <Link to={`/product/${item.productId}`} className = 'text-blue-500 hover:underline'>
                                             {item.name}
                                         </Link>
                                     </td>
-                                    <td className='py-2 px-4'>${item.price}</td>
+                                    <td className='py-2 px-4'>${item.price ?? 0}</td>
                                     <td className='py-2 px-4'>{item.quantity}</td>
-                                    <td className='py-2 px-4'>${item.price * item.quantity}</td>
+                                    <td className='py-2 px-4'>${(item.price ?? 0) * item.quantity}</td>
                                 </tr>
                             ))}
                         </tbody>

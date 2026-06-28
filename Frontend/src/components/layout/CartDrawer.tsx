@@ -2,6 +2,7 @@ import React from 'react'
 import { IoMdClose } from 'react-icons/io'
 import CartContents from '../cart/CartContents'
 import { useNavigate } from 'react-router-dom'
+import { useAppSelector } from '../../redux/hooks'
 
 interface CartDrawerProps {
   drawerOpen: boolean
@@ -11,11 +12,17 @@ interface CartDrawerProps {
 
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ drawerOpen, toggleCartDrawer }) => {
-
+    const {user,guestId}=useAppSelector((state)=>state.auth)
+    const {cart} = useAppSelector((state)=>state.cart)
+    const userId = user ? user._id :null
     const navigate = useNavigate();
     const handleCheckout = () => {
         toggleCartDrawer(); // Close the cart drawer
-        navigate('/checkout');
+        if (!user){
+            navigate('/login?redirect=checkout')
+        }else{
+            navigate('/checkout')
+        }
 }
 
   return (
@@ -28,12 +35,21 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ drawerOpen, toggleCartDrawer })
             </div>
             <div className='flex-grow p-4 overflow-y-auto text-left'>
                 {/* Cart items will go here */}
-                <CartContents/>
+                {cart && cart?.products?.length>0? (<CartContents cart ={cart}  userId={userId} guestId={guestId}/>
+                ) : ( 
+                    <p> Your cart is empty</p>
+                )
+                }
+    
                 {/* <p className='text-black'>Your cart is currently empty.</p> */}
             </div>
             <div>
-                <button onClick={handleCheckout} className="bg-black text-white px-4 py-2 rounded"> checkout </button>
-                <p className='text-black text-sm mt-2 text-center tracking-tighter'> Shipping , taxes and discount codes calculated </p>
+                {cart && cart?.products?.length>0 && (
+                    <>
+                        <button onClick={handleCheckout} className="bg-black text-white px-4 py-2 rounded"> checkout </button>
+                        <p className='text-black text-sm mt-2 text-center tracking-tighter'> Shipping , taxes and discount codes calculated </p>
+                    </>
+                ) }
             </div>
         </div>
   )

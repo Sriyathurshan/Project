@@ -1,9 +1,31 @@
 import { createSlice , createAsyncThunk} from "@reduxjs/toolkit"
+import type { PayloadAction } from "@reduxjs/toolkit"
 import axios from "axios"
-import { FcClearFilters } from "react-icons/fc"
+import type { ApiError, Product, ProductFilters } from "../types"
+
+interface ProductsState {
+    products: Product[];
+    selectedProduct: Product | null;
+    similarProducts: Product[];
+    loading: boolean;
+    error: string | null;
+    filters: ProductFilters;
+}
+
+interface UpdateProductPayload {
+    id: string | number;
+    productData: Partial<Product>;
+}
+
+const getApiError = (error: unknown, fallback: string): ApiError => {
+    if (axios.isAxiosError<ApiError>(error)) {
+        return error.response?.data ?? { message: error.message }
+    }
+    return { message: fallback }
+}
 
 //Async thunks to fetch Products by Vollection and optional Filters
-export const fetchProductsByFilters = createAsyncThunk(
+export const fetchProductsByFilters = createAsyncThunk<Product[], ProductFilters, { rejectValue: ApiError }>(
     "products/fetchByFilters",
 async ({
     collection,
@@ -18,7 +40,8 @@ async ({
     material,
     brand,
     limit
-}) =>{
+}, {rejectWithValue}) =>{
+    try{
     const query = new URLSearchParams()
     if (collection) query.append("collection",collection)
     if (size) query.append("size",size)
@@ -31,31 +54,43 @@ async ({
     if (category) query.append("category",category)
     if (material) query.append("material",material) 
     if (brand) query.append("brand",brand)
-    if (limit) query.append("limit",limit)
+    if (limit) query.append("limit",String(limit))
 
 
     const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products?${query.toString()}`)
 
     return response.data
+    }
+    catch(error){
+        return rejectWithValue(getApiError(error, "Failed to fetch products"))
+    }
 
 }
 )
 
-export const fetchProductDetails=createAsyncThunk("products/fetchProductDetails" , async(id) =>{
-    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`)
-    return response.data
+export const fetchProductDetails=createAsyncThunk<Product, string | number, { rejectValue: ApiError }>("products/fetchProductDetails" , async(id,{rejectWithValue}) =>{
+    try{
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`)
+        return response.data
+    }
+    catch(error){
+        return rejectWithValue(getApiError(error, "Failed to fetch product details"))
+    }
 })
 
 //Async thunk to fetch smilar products
 export const updateProduct = createAsyncThunk(
     "products/updateProduct",
-    async({id,productData}) =>{
-        `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`,productData,
-        {
-            headers :{
-                Authorization:`Bearer ${localStorage.getItem("userToken")}`
+    async({id,productData}: UpdateProductPayload) =>{
+        const response = await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`,
+            productData,
+            {
+                headers :{
+                    Authorization:`Bearer ${localStorage.getItem("userToken")}`
+                }
             }
-        }
+        )
         return response.data
     }
 )
@@ -63,7 +98,7 @@ export const updateProduct = createAsyncThunk(
 //Asyn thunk to fetch similar products
 export const fetchSimilarProducts = createAsyncThunk(
     "products/fetchSimilarProducts",
-    async ({id}) =>{
+    async ({id}: { id: string | number }) =>{
         const response = await axios.get(
             `${import.meta.env.VITE_BACKEND_URL}/api/products/similar/${id}`)
         return response.data
@@ -71,31 +106,32 @@ export const fetchSimilarProducts = createAsyncThunk(
     
 )
 
+const initialState: ProductsState = {
+    products:[],
+    selectedProduct:null,
+    similarProducts:[],
+    loading:false,
+    error:null,
+    filters:{
+        category:"",
+        size:"",
+        color:"",
+        gender:"",
+        brand:"",
+        minPrice:"",
+        maxPrice:"",
+        sortBy:"",
+        search:"",
+        material:"",
+        collection:""
+    },
+}
+
 const productsSlice = createSlice({
     name:"products",
-    initialState:{
-        products:[],
-        selectedProduct:null,
-        similarProducts:[],
-        loading:false,
-        error:null,
-        filters:{
-            category:"",
-            size:"",
-            color:"",
-            gender:"",
-            brand:"",
-            minPrice:"",
-            maxPrice:"",
-            sortBy:"",
-            search:"",
-            material:"",
-            collection:""
-        },
-
-    },
+    initialState,
     reducers :{
-        setFilters:(state,action)=>{
+        setFilters:(state,action: PayloadAction<ProductFilters>)=>{
             state.filters={...state.filters,...action.payload}
         },
         clearFilters:(state)=>{
@@ -127,7 +163,7 @@ const productsSlice = createSlice({
         })
         .addCase(fetchProductsByFilters.rejected,(state,action) =>{
             state.loading=false,
-            state.error=action.error.message
+            state.error=action.payload?.message ?? action.error.message ?? "Failed to fetch products"
         })
         //Handle fetching single product details
         .addCase(fetchProductDetails.pending,(state) =>{
@@ -140,7 +176,7 @@ const productsSlice = createSlice({
         })
         .addCase(fetchProductDetails.rejected,(state,action) =>{
             state.loading=false,
-            state.error=action.error.message
+            state.error=action.payload?.message ?? action.error.message ?? "Failed to fetch product details"
         })
         //Handle updating Product
         .addCase(updateProduct.pending,(state) =>{
@@ -149,15 +185,15 @@ const productsSlice = createSlice({
         })
         .addCase(updateProduct.fulfilled,(state,action) =>{
             state.loading=false
-            const updatedProduct =action.payload
-            const index =state.products.findIndex((product) =>product._id === updateProduct._id)
+            const updatedProduct = action.payload as Product
+            const index =state.products.findIndex((product) =>product._id === updatedProduct._id)
             if (index !== -1){
                 state.products[index] =updatedProduct
             }
         })
         .addCase(updateProduct.rejected,(state,action) =>{
             state.loading=false,
-            state.error=action.error.message
+            state.error=action.error.message ?? null
         })
         .addCase(fetchSimilarProducts.pending,(state) =>{
             state.loading=true,
@@ -165,11 +201,11 @@ const productsSlice = createSlice({
         })
         .addCase(fetchSimilarProducts.fulfilled,(state,action) =>{
             state.loading=false,
-            state.products = action.payload
+            state.similarProducts= action.payload
         })
         .addCase(fetchSimilarProducts.rejected,(state,action) =>{
             state.loading=false,
-            state.error=action.error.message
+            state.error=action.error.message ?? null
         })
     }
 })

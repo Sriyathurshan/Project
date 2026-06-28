@@ -1,64 +1,34 @@
 import React, { useEffect } from 'react'
-import { BiBrightness } from 'react-icons/bi';
-import {toast} from 'sonner';
 import ProductGrid from './ProductGrid';
+import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
+import { fetchProductDetails, fetchSimilarProducts } from '../../redux/slice/productsSlice';
+import { addToCart } from '../../redux/slice/cartSlice';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 
-const selectedProduct={
-    id:1,
-    name:"Stylish Sneakers",
-    originalPrice:150,
-    discountedPrice:120,
-    description:"These stylish sneakers are perfect for everyday wear.",
-    brand:"FashionCo",
-    material:"Leather",
-    sizes:["6","7","8","9","10"],
-    colors:["Black","White","Red"],
-    images:[
-        {
-            url:"https://picsum.photos/500/500?random=10",
-            altText:"Stylish Sneakers"
-        },
-        {
-            url:"https://picsum.photos/500/500?random=11",
-            altText:"Stylish Sneakers Side View"
-        },
-        
-        ]
+interface ProductDetailsProps {
+    productId?: string | number;
 }
 
-const similarProducts =[
-    {
-        _id: 1,
-        name: "product 1",
-        images: [{url:"https://picsum.photos/500/500?random=12"}],
-        price : 100
-    },
-    {
-        _id: 2,
-        name: "product 2",
-        images: [{url:"https://picsum.photos/500/500?random=13"}],
-        price: 24
-    },
-    {
-        _id: 3,
-        name: "product 3",
-        images: [{url:"https://picsum.photos/500/500?random=14"}],
-        price : 243
-    },
-    {
-        _id: 4,
-        name: "product 4",
-        images: [{url:"https://picsum.photos/500/500?random=15"}],
-        price: 50
-    }
-]
-
-const ProductDetails = () => {
+const ProductDetails = ({productId}: ProductDetailsProps) => {
+    const {id} = useParams()
+    const dispatch = useAppDispatch()
+    const {selectedProduct,loading,error,similarProducts} = useAppSelector((state)=>state.products)
+    const {user,guestId} = useAppSelector((state)=>state.auth)
     const [mainImage, setMainImage] = React.useState("");
     const [selectedSize, setSelectedSize] = React.useState("");
     const [selectedColor, setSelectedColor] = React.useState("");
     const [quantity, setQuantity] = React.useState(1); 
-    const [isButtonDisabled, setIsButtonDisabled] = React.useState(false);   
+    const [isButtonDisabled, setIsButtonDisabled] = React.useState(false); 
+    
+    const productFetchId = productId|| id
+
+    useEffect(()=>{
+        if(productFetchId){
+            dispatch(fetchProductDetails(productFetchId))
+            dispatch(fetchSimilarProducts({id:productFetchId}))
+        }
+    },[dispatch,productFetchId])
 
     useEffect(() => {
         if(selectedProduct?.images?.length >0){
@@ -74,16 +44,32 @@ const ProductDetails = () => {
             return;
         }
         setIsButtonDisabled(true);
-        setTimeout(() => {
-            setIsButtonDisabled(false);
-            toast.success("Product added to cart!",{
-                duration: 1000
-            });
-        },1000)
+        dispatch(
+            addToCart({
+                productId:productFetchId,
+                quantity,
+                size:selectedSize,
+                color:selectedColor,
+                guestId,
+                userId:user?._id
+            })
+        ).then(()=>{
+            toast.success("Product added to Cart!",{
+                duration :1000
+            })
+        })
+        .finally(()=>{
+            setIsButtonDisabled(false)
+        })
     };
+
+    if (loading) return <p>Loading...</p>
+    if (error) return <p>Error: {error}</p>
+    if (!selectedProduct) return <p>Product not found</p>
 
   return (
     <div className='p-6'>
+        {selectedProduct &&(
         <div className='max-w-6xl mx-auto bg-white p-8 rounded-lg'>
             <div className='flex flex-col md:flex-row'>
                 {/*left thumbnails*/}
@@ -129,7 +115,7 @@ const ProductDetails = () => {
 
                     <div className='mb-4'>
                         <h3 className='font-semibold'>Sizes:</h3>
-                        {selectedProduct.sizes.map((size) => (
+                        {selectedProduct.sizes?.map((size) => (
                             <button 
                                 key={size} 
                                 onClick={() => setSelectedSize(size)} 
@@ -140,7 +126,7 @@ const ProductDetails = () => {
                         ))}
                     </div>
                     <div className='flex space-x-4 mb-6'>
-                        {selectedProduct.colors.map((color) => (
+                        {selectedProduct.colors?.map((color) => (
                             <button 
                                 key={color}
                                 onClick={() => setSelectedColor(color)}
@@ -193,10 +179,11 @@ const ProductDetails = () => {
             <div className='mt-20'>
                 <h2 className='text-2xl test-center font-semibold mb-4'>You may also like</h2>
                 <p className='text-gray-700'>
-                    <ProductGrid products={similarProducts}/>
+                    <ProductGrid products={similarProducts} loading={loading} error={error}/>
                 </p>
             </div>
         </div>
+        )}
     </div>
   )
 }

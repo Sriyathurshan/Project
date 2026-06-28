@@ -1,50 +1,26 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { fetchUserOrders } from '../redux/slice/orderSlice';
 
 
 
 
 const MyOrdersPage = () => {
-    const [orders,setOrders]=useState([]);
     const navigate = useNavigate()
+    const dispatch= useAppDispatch()
+    const{orders,loading,error} = useAppSelector((state)=>state.orders)
 
-    useEffect(() => {
-        setTimeout(() => {
-        const mockOrders =[
-            {
-                _id : "123",
-                createdAt : new Date(),
-                shippingAddress : { city: "NewYork" , country:"USA"},
-                orderItems : [
-                    {
-                    name : "proudct 1",
-                    image: "https://picsum.photos/500/500?random=1"}
-                    ],
-                totalPrice: 100,
-                isPaid : true
-            },
-            {
-                _id : "125",
-                createdAt : new Date(),
-                shippingAddress : { city: "New Jersey" , country:"USA"},
-                orderItems : [
-                    {
-                    name : "proudct 2",
-                    image: "https://picsum.photos/500/500?random=2"}
-                    ],
-                totalPrice: 200,
-                isPaid : true,
-            }
-        ]
-        setOrders(mockOrders)
-
-        } ,1000)
-
-    } ,[])
-
-    const handleRowClick= (orderId) => {
+    useEffect(()=>{
+        dispatch(fetchUserOrders())
+    },[dispatch])
+    
+    const handleRowClick= (orderId: string) => {
         navigate(`/order/${orderId}`)
     }
+
+    if(loading) return <p> Loading....</p>
+    if(error) return <p>Error : {error}</p>
 
   return (
     <div className='max-w-7xl mx-auto p-4 sm:p-6'>
@@ -73,7 +49,10 @@ const MyOrdersPage = () => {
                                         className='w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg'/>
                                 </td> 
                                 <td className='py-2 px-4 sm:py-3 font-medium'>{order._id}</td>
-                                <td className='py-2 px-4 sm:py-3 font-medium'>{order.createdAt.toLocaleDateString()} {" "} {order.createdAt.toLocaleTimeString()}</td>
+                                <td className='py-2 px-4 sm:py-3 font-medium'>
+                                    {new Date(order.createdAt).toLocaleDateString()}{" "}
+                                    {new Date(order.createdAt).toLocaleTimeString()}
+                                </td>
                                 <td className='py-2 px-4 sm:py-3 font-medium'>{order.shippingAddress.city}, {order.shippingAddress.country}</td>
                                 <td className='py-2 px-4 sm:py-3 font-medium'>{order.orderItems.length}</td>
                                 <td className='py-2 px-4 sm:py-3 font-medium'>${order.totalPrice.toFixed(2)}</td>

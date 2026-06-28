@@ -15,7 +15,7 @@ const EditProductPage = () => {
         collections: string
         material: string
         gender: string
-        images: { url: string }[]
+        images: { url: string; altText?: string }[]
     }
 
 

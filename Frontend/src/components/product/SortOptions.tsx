@@ -1,9 +1,9 @@
-import React from 'react'
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const SortOptions = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const handleSortChange = (e) => {
+  const navigate = useNavigate();
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedSort = e.target.value;
     // Handle the sorting logic based on the selected option
     console.log('Selected Sort Option:', selectedSort);

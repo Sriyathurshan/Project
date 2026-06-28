@@ -1,9 +1,23 @@
 import {createSlice , createAsyncThunk} from "@reduxjs/toolkit"
 import axios from 'axios'
+import type { ApiError, User } from "../types"
+
+interface AuthPayload {
+    email: string;
+    password: string;
+    name?: string;
+}
+
+interface AuthState {
+    user: User | null;
+    guestId: string;
+    loading: boolean;
+    error: string | null;
+}
 
 //retrieve user info and token form localstorage if available
 const userFromStorage = localStorage.getItem("userInfo")
- ? JSON.parse(localStorage.getItem("userInfo"))
+ ? JSON.parse(localStorage.getItem("userInfo") as string) as User
  : null
 
  //check for an existing guests ID in the localStorage or generate a new One
@@ -12,7 +26,7 @@ const initialGuestId =
 localStorage.setItem("guestId" , initialGuestId) 
 
 //inital state
-const initialState = {
+const initialState: AuthState = {
     user:userFromStorage,
     guestId:initialGuestId,
     loading:false,
@@ -20,7 +34,7 @@ const initialState = {
 }
 
 //Async Thunk for User Login
-export const loginUser = createAsyncThunk("auth/login",async(userData,{rejectWithValue})=>{
+export const loginUser = createAsyncThunk<User, AuthPayload, { rejectValue: ApiError }>("auth/login",async(userData,{rejectWithValue})=>{
     try{
         const response =await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users/login`,
             userData
@@ -31,12 +45,15 @@ export const loginUser = createAsyncThunk("auth/login",async(userData,{rejectWit
         return response.data.user //return the object from the response
     }
     catch(error){
-        return rejectWithValue(error.response.data)
+        if (axios.isAxiosError<ApiError>(error)) {
+            return rejectWithValue(error.response?.data ?? { message: error.message })
+        }
+        return rejectWithValue({ message: "Login failed" })
     }
 })
 
 //Async Thunk for User Registration
-export const registerUser = createAsyncThunk("auth/resgisterUser",async(userData,{rejectWithValue})=>{
+export const registerUser = createAsyncThunk<User, AuthPayload, { rejectValue: ApiError }>("auth/resgisterUser",async(userData,{rejectWithValue})=>{
     try{
         const response =await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users/register`,
             userData
@@ -47,7 +64,10 @@ export const registerUser = createAsyncThunk("auth/resgisterUser",async(userData
         return response.data.user //return the object from the response
     }
     catch(error){
-        return rejectWithValue(error.response.data)
+        if (axios.isAxiosError<ApiError>(error)) {
+            return rejectWithValue(error.response?.data ?? { message: error.message })
+        }
+        return rejectWithValue({ message: "Registration failed" })
     }
 })
 
@@ -80,7 +100,7 @@ const authSlice = createSlice({
         })
         .addCase (loginUser.rejected,(state,action) =>{
             state.loading = false
-            state.error=action.payload.message
+            state.error=action.payload?.message ?? action.error.message ?? "Login failed"
         })
         .addCase (registerUser.pending,(state) =>{
             state.loading = true
@@ -93,7 +113,7 @@ const authSlice = createSlice({
         })
         .addCase (registerUser.rejected,(state,action) =>{
             state.loading = false
-            state.error=action.payload.message
+            state.error=action.payload?.message ?? action.error.message ?? "Registration failed"
         })
     }
 })

@@ -1,11 +1,23 @@
 import {createSlice , createAsyncThunk} from "@reduxjs/toolkit"
 import axios from 'axios'
+import type { Product } from "../types"
+
+interface AdminProductState {
+    products: Product[];
+    loading: boolean;
+    error: string | null;
+}
+
+interface ProductMutationPayload {
+    id: string | number;
+    productData: Partial<Product>;
+}
 
 const API_URL = `${import.meta.env.VITE_BACKEND_URL}`
 const USER_TOKEN = `Bearer ${localStorage.getItem("userToken")}`
 
 // asyncThunk to fethc admin products
-export const fetchAdminProducts = createAsyncThunk("adminProducts/fetchProducts",async ()=>{
+export const fetchAdminProducts = createAsyncThunk<Product[]>("adminProducts/fetchProducts",async ()=>{
     const response = await axios.get(`${API_URL}/api/admin`,
         {
             headers:{
@@ -17,7 +29,7 @@ export const fetchAdminProducts = createAsyncThunk("adminProducts/fetchProducts"
 })
 
 //async fucntion to create a new product
-export const createProduct=createAsyncThunk("adminProducts/createProduct",
+export const createProduct=createAsyncThunk<Product, Partial<Product>>("adminProducts/createProduct",
     async (productData) =>{
         const response = await axios.post(`${API_URL}/api/admin/products`,
             productData,
@@ -32,7 +44,7 @@ export const createProduct=createAsyncThunk("adminProducts/createProduct",
 
 //async thunk to update an exiting product
 export const updateProduct = createAsyncThunk("adminProducts/updateProduct",
-    async({id,productData})=>{
+    async({id,productData}: ProductMutationPayload)=>{
         const response =await axios.put(`${API_URL}/api/admin/products/${id}`,productData,
             {
                 headers:{
@@ -47,7 +59,7 @@ export const updateProduct = createAsyncThunk("adminProducts/updateProduct",
 
 //async thunk to delete  a product
 export const deleteProduct = createAsyncThunk("adminProducts/deleteProduct",
-    async(id)=>{
+    async(id: string | number)=>{
         await axios.delete(`${API_URL}/api/admin/products/${id}`,
             {
                 headers:{Authorization:USER_TOKEN}
@@ -58,14 +70,16 @@ export const deleteProduct = createAsyncThunk("adminProducts/deleteProduct",
     }
 )
 
+const initialState: AdminProductState = {
+    products:[],
+    loading:false,
+    error:null
+}
+
 const adminProductSlice = createSlice({
     name:"adminProducts",
-    initialState:{
-        products:[],
-        loading:false,
-        error:null
-    },
-    reducers:[],
+    initialState,
+    reducers:{},
     extraReducers:(builder)=>{
         builder
         .addCase(fetchAdminProducts.pending,(state)=>{
@@ -77,7 +91,7 @@ const adminProductSlice = createSlice({
         })
         .addCase(fetchAdminProducts.rejected,(state,action)=>{
             state.loading = false
-            state.error=action.error.message
+            state.error=action.error.message ?? null
         })
         .addCase(createProduct.fulfilled,(state,action)=>{
             state.products.push(action.payload)

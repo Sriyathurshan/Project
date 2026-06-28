@@ -1,14 +1,37 @@
-import React from 'react'
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import login from "../assets/login.webp"
 import {loginUser} from "../redux/slice/authSlice"
-import { useDispatch } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { mergeCart } from '../redux/slice/cartSlice';
 
 const Login = () => {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
-    const [error, setError] = React.useState('');
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
+    const location = useLocation()
+    const {user,guestId,loading,error} =useAppSelector((state)=>state.auth)
+    const {cart} =useAppSelector((state)=>state.cart)
+    const navigate = useNavigate()
+    
+    //Get redirect paramter and check if it is checkout or something
+    const redirect = new URLSearchParams(location.search).get("redirect") || "/"
+    const isCheckoutRedirect = redirect.includes("checkout")
+
+    useEffect(() =>{
+      if(user){
+          if(cart?.products.length>0 && guestId){
+            dispatch(mergeCart({guestId,user})).unwrap().catch((error)=>{
+              console.error("Cart merge failed", error)
+            }).finally(()=>{
+              navigate(isCheckoutRedirect?"/checkout":"/")
+            })
+          }
+          else{
+            navigate(isCheckoutRedirect?"/checkout":"/")
+          }
+        }
+      },[user,guestId,cart,navigate,isCheckoutRedirect,dispatch])
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -45,8 +68,10 @@ const Login = () => {
                         placeholder="enter your password"
                     />
                 </div>
-                <button type="submit" className="w-full bg-black text-white py-3 rounded hover:bg-gray-700 transition duration-300">Login</button>
-                <p className='mt-6 text-center text-sm '>Don't have an account ? <Link to="/register" className= "text-blue-500"> Register</Link> </p>
+                <button type="submit" disabled={loading} className="w-full bg-black text-white py-3 rounded hover:bg-gray-700 transition duration-300 disabled:cursor-not-allowed disabled:bg-gray-500">
+                    {loading ? "Logging in..." : "Login"}
+                </button>
+                <p className='mt-6 text-center text-sm '>Don't have an account ? <Link to={`/register?redirect=${encodeURIComponent(redirect)}`} className= "text-blue-500"> Register</Link> </p>
             </form>
         </div>
          <div className="w-1/2 bg-gray-200 items-center justify-center hidden md:block">

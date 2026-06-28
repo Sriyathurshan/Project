@@ -1,15 +1,38 @@
-import React from 'react'
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import login from "../assets/login.webp"
 import { registerUser }  from "../redux/slice/authSlice"
-import {useDispatch} from "react-redux"
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { mergeCart } from '../redux/slice/cartSlice';
 
 const Register = () => {
     const [name,setName]=React.useState('');
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
-    const [error, setError] = React.useState('');
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
+    const location = useLocation()
+    const {user,guestId,loading,error} =useAppSelector((state)=>state.auth)
+    const {cart} =useAppSelector((state)=>state.cart)
+    const navigate = useNavigate()
+    
+    //Get redirect paramter and check if it is checkout or something
+    const redirect = new URLSearchParams(location.search).get("redirect") || "/"
+    const isCheckoutRedirect = redirect.includes("checkout")
+
+    useEffect(() =>{
+      if(user){
+          if(cart?.products.length>0 && guestId){
+            dispatch(mergeCart({guestId,user})).unwrap().catch((error)=>{
+              console.error("Cart merge failed", error)
+            }).finally(()=>{
+              navigate(isCheckoutRedirect?"/checkout":"/")
+            })
+          }
+          else{
+            navigate(isCheckoutRedirect?"/checkout":"/")
+          }
+        }
+      },[user,guestId,cart,navigate,isCheckoutRedirect,dispatch])
 
     const handleRegister= (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,7 +43,7 @@ const Register = () => {
         <div className="w-full md:w-1/2 h-screen flex items-center justify-center p-8 md:p-12">
             <form onSubmit={handleRegister} className="bg-white p-8 rounded-lg shadow-sm w-full max-w-md">
                 <h2 className="text-2xl font-semibold mb-6">Hey there! </h2>
-                <p className='text-center mb-6'> Enter your username and password to Login</p>
+                <p className='text-center mb-6'> Create your account</p>
                 {error && <p className="text-red-500 mb-4">{error}</p>}
                 <div className="mb-4">
                     <label htmlFor="email" className="block mb-2 font-bold text-black text-left">User Name</label>
@@ -58,8 +81,10 @@ const Register = () => {
                         placeholder="enter your password"
                     />
                 </div>
-                <button type="submit" className="w-full bg-black text-white py-3 rounded hover:bg-gray-700 transition duration-300">Register</button>
-                <p className='mt-6 text-center text-sm '>Already have an account ? <Link to="/login" className= "text-blue-500"> Login</Link> </p>
+                <button type="submit" disabled={loading} className="w-full bg-black text-white py-3 rounded hover:bg-gray-700 transition duration-300 disabled:cursor-not-allowed disabled:bg-gray-500">
+                    {loading ? "Registering..." : "Register"}
+                </button>
+                <p className='mt-6 text-center text-sm '>Already have an account ? <Link to={`/login?redirect=${encodeURIComponent(redirect)}`} className= "text-blue-500"> Login</Link> </p>
             </form>
         </div>
          <div className="w-1/2 bg-gray-200 items-center justify-center hidden md:block">

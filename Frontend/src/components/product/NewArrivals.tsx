@@ -1,107 +1,35 @@
 import React, { useRef } from 'react'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import axios from 'axios';
+import type { Product } from '../../redux/types';
 
 const NewArrivals = () => {
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const [isDragging, setIsDragging] = React.useState(false);
     const [startX, setStartX] = React.useState(0);
-    const [scrollLeft, setScrollLeft] = React.useState(false);
     const [canScrollRight, setCanScrollRight] = React.useState(true);
     const [canScrollLeft, setCanScrollLeft] = React.useState(false);
-    const newArrivals = [
-        {
-            id :"1",
-            name: "Stylish Jacket",
-            price:120,
-            images:[
-                {
-                    url:"https://picsum.photos/500/500?random=1",
-                    altText:"Stylish Jacket"
-                },
-            ],
-        },
-        {
-            id :"2",
-            name: "Stylish Jacket",
-            price:120,
-            images:[
-                {
-                    url:"https://picsum.photos/500/500?random=2",
-                    altText:"Stylish Jacket"
-                },
-            ],
-        },
-        {
-            id :"3",
-            name: "Stylish Jacket",
-            price:120,
-            images:[
-                {
-                    url:"https://picsum.photos/500/500?random=3",
-                    altText:"Stylish Jacket"
-                },
-            ],
-        },
-        {
-            id :"4",
-            name: "Stylish Jeans",
-            price:120,
-            images:[
-                {
-                    url:"https://picsum.photos/500/500?random=4",
-                    altText:"Stylish Jeans"
-                },
-            ],
-        },
-        {
-            id :"5",
-            name: "Stylish Jacket",
-            price:120,
-            images:[
-                {
-                    url:"https://picsum.photos/500/500?random=5",
-                    altText:"Stylish Jacket"
-                },
-            ],
-        },
-        {
-            id :"6",
-            name: "Stylish Jacket",
-            price:120,
-            images:[
-                {
-                    url:"https://picsum.photos/500/500?random=6",
-                    altText:"Stylish Jacket"
-                },
-            ],
-        },
-        {
-            id :"7",
-            name: "Stylish Jacket",
-            price:120,
-            images:[
-                {
-                    url:"https://picsum.photos/500/500?random=7",
-                    altText:"Stylish Jacket"
-                },
-            ],
-        },
-        {
-            id :"8",
-            name: "Stylish Jacket",
-            price:120,
-            images:[
-                {
-                    url:"https://picsum.photos/500/500?random=8",
-                    altText:"Stylish Jacket"
-                },
-            ],
-        },
-    ]
+    
+    const [newArrivals , setNewArrivals]=React.useState<Product[]>([])
+
+    React.useEffect(()=>{
+        const fetchNewArrivals = async() =>{
+            try{
+                const response = await axios.get(
+                    `${import.meta.env.VITE_BACKEND_URL}/api/products/new-arrivals`)
+                setNewArrivals(response.data)
+            }
+            catch(error){
+                console.error(error)
+            }
+        }
+        fetchNewArrivals()
+    },[])
 
     const scroll = (direction : 'left' | 'right') => {
         const container = scrollRef.current;
         const scrollAmount = direction === 'left' ? -400 : 400;
+        if (!container) return;
         container.scrollBy ({
             left: scrollAmount,
             behavior: 'smooth'
@@ -130,7 +58,7 @@ const NewArrivals = () => {
             container.addEventListener("scroll",updateScrollButtons);
             updateScrollButtons();
         } 
-    },[])
+    },[newArrivals])
 
     return (
     <section className='py-16 px-4 lg:px-0'>
@@ -149,11 +77,11 @@ const NewArrivals = () => {
             </div>
             <div ref={scrollRef} className='container mx-auto overflow-x-scroll flex space-x-6 relative '>
                 {newArrivals.map((product) => (
-                    <div key={product.id} className='min-w-[100%] sm:min-w-[50%] lg:min-w-[30%] relative'>
-                        <img src={product.images[0]?.url} 
+                    <div key={product._id} className='min-w-[100%] sm:min-w-[50%] lg:min-w-[30%] relative'>
+                        <img src={product.images[0]?.url || "/placeholder.png"}
                         alt={product.images[0]?.altText || product.name} className='w-full h-[500px] object-cover rounded-lg'/>
                         <div className='absolute bottom-0 left-0 right-0 bg-opacity-50 backdrop-blur-md text-white p-4 rounded-b-lg'>
-                            <a href={`/product/${product.id}`} className='block'>
+                            <a href={`/product/${product._id}`} className='block'>
                                 <h3 className='font-medium'>{product.name}</h3>
                                 <p className='mt-1'>${product.price}</p>
                             </a>

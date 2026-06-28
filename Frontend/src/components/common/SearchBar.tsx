@@ -1,17 +1,25 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { HiMagnifyingGlass, HiMiniXCircle } from 'react-icons/hi2'
+import { useNavigate } from 'react-router-dom'
+import { useAppDispatch } from '../../redux/hooks'
+import { setFilters } from '../../redux/slice/productsSlice'
 
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+  const dispatch = useAppDispatch()
+  const navigate =useNavigate()
+
 
   const handleSearchToggle = () => {
     setIsOpen(!isOpen)
   }
 
-   const handleSearch = (e) => {
+   const handleSearch = (e: FormEvent) => {
     e.preventDefault()
-    console.log("Searching for:", searchTerm)
+    dispatch(setFilters({search:searchTerm}))
+    navigate(`collection/?search=${searchTerm}`)
     setIsOpen(false)
    }
 

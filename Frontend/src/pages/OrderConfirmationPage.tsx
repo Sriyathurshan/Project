@@ -1,35 +1,28 @@
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { clearCart } from "../redux/slice/cartSlice";
 
 
-const checkout = {
-    _id: "12323",
-    createdAt: new Date(),
-    items: [
-        {
-            name:"product 1",
-            price: 124,
-            color: "red",
-            size: "M",
-            quantity: 1,
-            image: "https://picsum.photos/500/500?random=12"
-        },
-        {
-            name:"product 2",
-            price: 0,
-            color: "blue",
-            size: "L",
-            quantity: 1,
-            image: "https://picsum.photos/500/500?random=13"
-        }
-    ],
-    shippingAddress: {
-        address: "123 Main St",
-        city: "New York",
-        country: "USA"
-    }
-}
+
 const OrderConfirmationPage = () => {
 
-    const calculateEstimatedDeliveryDate = (createdAt: Date) => {
+const dispatch = useAppDispatch()
+const navigate = useNavigate()
+const {checkout} = useAppSelector((state)=>state.checkout)
+
+//clear the cart when the order is confirmed
+useEffect(()=>{
+    if (checkout && checkout._id){
+        dispatch(clearCart())
+        localStorage.removeItem("cart")
+    }
+    else{
+        navigate("/my-order")
+    }
+},[checkout,dispatch,navigate])
+
+    const calculateEstimatedDeliveryDate = (createdAt: string) => {
         const orderDate = new Date(createdAt);
             orderDate.setDate(orderDate.getDate() + 7); // Add 7 days for estimated delivery
             return orderDate.toLocaleDateString();
@@ -49,7 +42,7 @@ const OrderConfirmationPage = () => {
                         Order ID: {checkout._id}
                     </p>
                     <p className="text-lg text-gray-700 ">
-                        Date: {checkout.createdAt.toLocaleDateString()}
+                        Date: {new Date(checkout.createdAt).toLocaleDateString()}
                     </p>
                 </div>  
                 {/* estimated delivery date */}
