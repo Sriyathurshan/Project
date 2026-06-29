@@ -8,9 +8,10 @@ import { mergeCart } from '../redux/slice/cartSlice';
 const Login = () => {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
+    const [error] = React.useState('');
     const dispatch = useAppDispatch()
     const location = useLocation()
-    const {user,guestId,loading,error} =useAppSelector((state)=>state.auth)
+    const {user,guestId} =useAppSelector((state)=>state.auth)
     const {cart} =useAppSelector((state)=>state.cart)
     const navigate = useNavigate()
     
@@ -21,9 +22,7 @@ const Login = () => {
     useEffect(() =>{
       if(user){
           if(cart?.products.length>0 && guestId){
-            dispatch(mergeCart({guestId,user})).unwrap().catch((error)=>{
-              console.error("Cart merge failed", error)
-            }).finally(()=>{
+            dispatch(mergeCart({guestId,user})).unwrap().then(()=>{
               navigate(isCheckoutRedirect?"/checkout":"/")
             })
           }
@@ -68,9 +67,7 @@ const Login = () => {
                         placeholder="enter your password"
                     />
                 </div>
-                <button type="submit" disabled={loading} className="w-full bg-black text-white py-3 rounded hover:bg-gray-700 transition duration-300 disabled:cursor-not-allowed disabled:bg-gray-500">
-                    {loading ? "Logging in..." : "Login"}
-                </button>
+                <button type="submit" className="w-full bg-black text-white py-3 rounded hover:bg-gray-700 transition duration-300">Login</button>
                 <p className='mt-6 text-center text-sm '>Don't have an account ? <Link to={`/register?redirect=${encodeURIComponent(redirect)}`} className= "text-blue-500"> Register</Link> </p>
             </form>
         </div>

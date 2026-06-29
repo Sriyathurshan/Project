@@ -1,7 +1,7 @@
 import { createSlice , createAsyncThunk} from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
 import axios from "axios"
-import type { ApiError, Product, ProductFilters } from "../types"
+import type { Product, ProductFilters } from "../types"
 
 interface ProductsState {
     products: Product[];
@@ -17,15 +17,8 @@ interface UpdateProductPayload {
     productData: Partial<Product>;
 }
 
-const getApiError = (error: unknown, fallback: string): ApiError => {
-    if (axios.isAxiosError<ApiError>(error)) {
-        return error.response?.data ?? { message: error.message }
-    }
-    return { message: fallback }
-}
-
 //Async thunks to fetch Products by Vollection and optional Filters
-export const fetchProductsByFilters = createAsyncThunk<Product[], ProductFilters, { rejectValue: ApiError }>(
+export const fetchProductsByFilters = createAsyncThunk(
     "products/fetchByFilters",
 async ({
     collection,
@@ -40,8 +33,7 @@ async ({
     material,
     brand,
     limit
-}, {rejectWithValue}) =>{
-    try{
+}: ProductFilters) =>{
     const query = new URLSearchParams()
     if (collection) query.append("collection",collection)
     if (size) query.append("size",size)
@@ -60,22 +52,13 @@ async ({
     const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products?${query.toString()}`)
 
     return response.data
-    }
-    catch(error){
-        return rejectWithValue(getApiError(error, "Failed to fetch products"))
-    }
 
 }
 )
 
-export const fetchProductDetails=createAsyncThunk<Product, string | number, { rejectValue: ApiError }>("products/fetchProductDetails" , async(id,{rejectWithValue}) =>{
-    try{
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`)
-        return response.data
-    }
-    catch(error){
-        return rejectWithValue(getApiError(error, "Failed to fetch product details"))
-    }
+export const fetchProductDetails=createAsyncThunk<Product, string | number>("products/fetchProductDetails" , async(id) =>{
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`)
+    return response.data
 })
 
 //Async thunk to fetch smilar products
@@ -163,7 +146,7 @@ const productsSlice = createSlice({
         })
         .addCase(fetchProductsByFilters.rejected,(state,action) =>{
             state.loading=false,
-            state.error=action.payload?.message ?? action.error.message ?? "Failed to fetch products"
+            state.error=action.error.message ?? null
         })
         //Handle fetching single product details
         .addCase(fetchProductDetails.pending,(state) =>{
@@ -176,7 +159,7 @@ const productsSlice = createSlice({
         })
         .addCase(fetchProductDetails.rejected,(state,action) =>{
             state.loading=false,
-            state.error=action.payload?.message ?? action.error.message ?? "Failed to fetch product details"
+            state.error=action.error.message ?? null
         })
         //Handle updating Product
         .addCase(updateProduct.pending,(state) =>{
